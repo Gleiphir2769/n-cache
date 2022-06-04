@@ -1,0 +1,30 @@
+// Copyright (c) 2012, Suryandaru Triandana <syndtr@gmail.com>
+// All rights reserved.
+//
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+package n_cache
+
+import (
+	"math/rand"
+	"strconv"
+	"testing"
+	"time"
+)
+
+func BenchmarkLRUCache(b *testing.B) {
+	c := NewCache(NoExpiration, DefaultCleanupInterval, NewLRU(10000))
+
+	b.SetParallelism(10)
+	b.RunParallel(func(pb *testing.PB) {
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+		for pb.Next() {
+			key := strconv.Itoa(r.Intn(1000000))
+			c.Get(key, func() (int, Value, time.Duration) {
+				return 1, key, c.defaultExpiration
+			}).Release()
+		}
+	})
+}
